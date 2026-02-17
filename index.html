@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Motor Control Lab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0a0e17;
+  --panel: #111827;
+  --card: #1a2233;
+  --card-hover: #1f2b3f;
+  --border: #2a3548;
+  --text: #e2e8f0;
+  --muted: #7a8ba7;
+  --accent: #0ea5e9;
+  --accent2: #06b6d4;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --purple: #a855f7;
+  --pink: #ec4899;
+  --plot-bg: #0d1420;
+  --grid: #1a2538;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  height: 100vh;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 52px 1fr;
+  height: 100vh;
+}
+
+/* ─── Top Bar ─── */
+.topbar {
+  grid-column: 1 / -1;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 10;
+}
+
+.topbar h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lesson-nav {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+}
+
+.lesson-btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lesson-btn:hover { background: var(--card-hover); color: var(--text); }
+.lesson-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.lesson-btn.completed { border-color: var(--green); color: var(--green); }
+
+.nav-arrows { display: flex; gap: 4px; margin-left: auto; }
+.nav-arrows button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.nav-arrows button:hover { background: var(--card-hover); color: var(--text); }
+
+/* ─── Sidebar ─── */
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.lesson-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.lesson-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(14, 165, 233, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.lesson-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.lesson-desc {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.lesson-desc strong { color: var(--text); font-weight: 600; }
+.lesson-desc code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--card);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent2);
+}
+
+.insight-box {
+  background: rgba(14, 165, 233, 0.08);
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 14px;
+}
+
+.insight-box .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.insight-box p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.challenge-box {
+  background: rgba(249, 158, 11, 0.08);
+  border-left: 3px solid var(--amber);
+  padding: 12px 14px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 14px;
+}
+
+.challenge-box .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.challenge-box p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.model-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--accent2);
+}
+
+.model-box .model-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ─── Main Area ─── */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Controls strip */
+.controls {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.gain-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gain-control.disabled { opacity: 0.25; pointer-events: none; }
+
+.gain-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 22px;
+}
+
+.gain-label.kp { color: var(--accent); }
+.gain-label.ki { color: var(--green); }
+.gain-label.kd { color: var(--purple); }
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 110px;
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.gain-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  min-width: 44px;
+  text-align: right;
+  background: var(--card);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.separator {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+
+.btn-run {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 20px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-run:hover { background: #0284c7; }
+.btn-run:active { transform: scale(0.97); }
+
+.btn-reset {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-reset:hover { background: var(--card-hover); color: var(--text); }
+
+.command-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-select label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.command-select select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  outline: none;
+}
+
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-group label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-switch.active { background: var(--accent); border-color: var(--accent); }
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--text);
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.toggle-switch.active::after { left: 18px; }
+
+/* ─── Plots ─── */
+.plots {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: 0;
+}
+
+.plot-container {
+  background: var(--plot-bg);
+  position: relative;
+  min-height: 0;
+}
+
+.plot-label {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.plot-legend {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  gap: 14px;
+  z-index: 2;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.legend-color {
+  width: 12px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.plot-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ─── Stats Bar ─── */
+.stats-bar {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-value.good { color: var(--green); }
+.stat-value.ok { color: var(--amber); }
+.stat-value.bad { color: var(--red); }
+
+/* ─── Animations ─── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.sidebar > * { animation: fadeIn 0.3s ease both; }
+.sidebar > *:nth-child(2) { animation-delay: 0.05s; }
+.sidebar > *:nth-child(3) { animation-delay: 0.1s; }
+.sidebar > *:nth-child(4) { animation-delay: 0.15s; }
+.sidebar > *:nth-child(5) { animation-delay: 0.2s; }
+.sidebar > *:nth-child(6) { animation-delay: 0.25s; }
+.sidebar > *:nth-child(7) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1>PID Control Lab</h1>
+    <div class="lesson-nav" id="lessonNav"></div>
+    <div class="nav-arrows">
+      <button onclick="prevLesson()">&larr; Prev</button>
+      <button onclick="nextLesson()">Next &rarr;</button>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main">
+    <div class="controls" id="controls"></div>
+    <div class="plots">
+      <div class="plot-container">
+        <div class="plot-label">POSITION</div>
+        <div class="plot-legend" id="legend1"></div>
+        <canvas id="plot1"></canvas>
+      </div>
+      <div class="plot-container">
+        <div class="plot-label">CONTROL SIGNAL</div>
+        <div class="plot-legend" id="legend2"></div>
+        <canvas id="plot2"></canvas>
+      </div>
+      <div class="plot-container">
+        <div class="plot-label">ERROR</div>
+        <div class="plot-legend" id="legend3"></div>
+        <canvas id="plot3"></canvas>
+      </div>
+    </div>
+    <div class="stats-bar" id="statsBar"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+const SIM_DT = 0.002;      // Physics timestep (500Hz internal)
+const CONTROL_DT = 0.01;   // Control loop rate (100Hz)
+const SIM_DURATION = 6;    // seconds
+const STEPS = Math.ceil(SIM_DURATION / SIM_DT);
+const LOG_EVERY = Math.round(CONTROL_DT / SIM_DT); // log at control rate
+
+function generateSetpoint(t, type, params = {}) {
+  const target = params.target || 100;
+  const stepTime = params.stepTime || 0.5;
+  if (t < stepTime) return 0;
+  const te = t - stepTime;
+  switch (type) {
+    case 'step':
+      return target;
+    case 'ramp': {
+      const rampTime = params.rampTime || 1.0;
+      return target * Math.min(te / rampTime, 1.0);
+    }
+    case 'trapezoid': {
+      const accelTime = params.accelTime || 0.8;
+      const coastTime = params.coastTime || 0.4;
+      const totalMove = accelTime + coastTime + accelTime;
+      if (te >= totalMove) return target;
+      if (te < accelTime) {
+        return target * (0.5 * (te / accelTime) * (te / accelTime)) / (0.5 + coastTime / accelTime / 2 + 0.5);
+      }
+      // simplified trapezoidal
+      const frac = Math.min(te / totalMove, 1.0);
+      const s = frac < 0.3 ? 2*frac*frac / 0.6 : frac < 0.7 ? (frac - 0.15) / 0.7 : 1 - 2*(1-frac)*(1-frac)/0.6;
+      return target * Math.min(Math.max(s, 0), 1);
+    }
+    case 'scurve': {
+      const moveTime = params.moveTime || 2.0;
+      if (te >= moveTime) return target;
+      const u = te / moveTime;
+      const s = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u);  // quadratic ease
+      return target * s;
+    }
+    case 'scurve_smooth': {
+      const moveTime = params.moveTime || 2.0;
+      if (te >= moveTime) return target;
+      const u = te / moveTime;
+      // smootherstep for minimal jerk
+      const s = u * u * u * (u * (u * 6 - 15) + 10);
+      return target * s;
+    }
+    default: return target;
+  }
+}
+
+function simulate(lesson, gains, commandType, options = {}) {
+  const { Kp = 0, Ki = 0, Kd = 0 } = gains;
+  const L = LESSONS[lesson];
+  const plant = L.plant;
+
+  let pos = 0, vel = 0;
+  let measPos = 0;
+  let integral = 0, prevError = 0, prevMeasError = 0;
+  let filteredDeriv = 0;
+
+  // Backlash state
+  let gearPos = 0;    // output side of gearbox
+  let motorPos = 0;   // motor side
+
+  // Logging
+  const log = { t: [], setpoint: [], truePos: [], measPos: [], control: [],
+                trueError: [], measError: [], velocity: [] };
+
+  let controlCounter = 0;
+  let control = 0;
+
+  for (let i = 0; i < STEPS; i++) {
+    const t = i * SIM_DT;
+    const sp = generateSetpoint(t, commandType, { target: 100 });
+
+    // ─── Measurement Model ───
+    measPos = pos;
+    if (plant.noiseStd) {
+      measPos += plant.noiseStd * gaussRandom();
+    }
+    if (plant.driftRate) {
+      measPos += plant.driftRate * t;  // linear drift
+    }
+    if (plant.noiseLowFreq) {
+      measPos += plant.noiseLowFreq * Math.sin(2 * Math.PI * 0.3 * t + 1.7);
+    }
+
+    // ─── Control Law (runs at control rate) ───
+    if (controlCounter % LOG_EVERY === 0) {
+      const measError = sp - measPos;
+      const trueError = sp - pos;
+
+      // PID
+      integral += measError * CONTROL_DT;
+
+      // Anti-windup (if enabled)
+      if (plant.antiWindup && plant.maxForce) {
+        const iMax = plant.maxForce / Math.max(Ki, 0.001);
+        integral = Math.max(-iMax, Math.min(iMax, integral));
+      }
+
+      let deriv;
+      if (plant.useFilteredDeriv) {
+        // Low-pass filter on derivative
+        const rawDeriv = (measError - prevMeasError) / CONTROL_DT;
+        const alpha = 0.15;
+        filteredDeriv = alpha * rawDeriv + (1 - alpha) * filteredDeriv;
+        deriv = filteredDeriv;
+      } else {
+        deriv = (measError - prevMeasError) / CONTROL_DT;
+      }
+
+      control = Kp * measError + Ki * integral + Kd * deriv;
+
+      // Actuator saturation
+      if (plant.maxForce) {
+        control = Math.max(-plant.maxForce, Math.min(plant.maxForce, control));
+      }
+
+      prevMeasError = measError;
+      prevError = trueError;
+    }
+    controlCounter++;
+
+    // ─── Plant Physics ───
+    let force = control;
+
+    // Gear slippage: reduce effective force under high jerk
+    if (plant.slippageThreshold) {
+      const accel = plant.mass ? force / plant.mass : force;
+      const absAccel = Math.abs(accel);
+      if (absAccel > plant.slippageThreshold) {
+        const excess = absAccel - plant.slippageThreshold;
+        const slipFactor = 1.0 / (1.0 + excess * plant.slippageRate);
+        force *= slipFactor;
+      }
+    }
+
+    if (plant.type === 'integrator') {
+      // First order: velocity = control
+      pos += force * SIM_DT * (plant.gain || 1.0);
+
+    } else if (plant.type === 'mass') {
+      // Second order: F = ma
+      const mass = plant.mass || 1.0;
+      let netForce = force;
+
+      // Viscous friction
+      if (plant.viscousFriction) {
+        netForce -= plant.viscousFriction * vel;
+      }
+
+      // Coulomb friction (stiction)
+      if (plant.coulombFriction) {
+        if (Math.abs(vel) < 0.01) {
+          // Static friction: opposes applied force up to limit
+          if (Math.abs(netForce) < plant.coulombFriction) {
+            netForce = 0;
+          } else {
+            netForce -= Math.sign(netForce) * plant.coulombFriction;
+          }
+        } else {
+          netForce -= Math.sign(vel) * plant.coulombFriction;
+        }
+      }
+
+      const accel = netForce / mass;
+      vel += accel * SIM_DT;  // semi-implicit Euler
+      let dx = vel * SIM_DT;
+
+      // Backlash model
+      if (plant.backlash) {
+        motorPos += dx;
+        const halfPlay = plant.backlash / 2;
+        if (motorPos > gearPos + halfPlay) {
+          gearPos = motorPos - halfPlay;
+        } else if (motorPos < gearPos - halfPlay) {
+          gearPos = motorPos + halfPlay;
+        }
+        pos = gearPos;
+      } else {
+        pos += dx;
+      }
+    }
+
+    // ─── Log data ───
+    if (i % LOG_EVERY === 0) {
+      log.t.push(t);
+      log.setpoint.push(sp);
+      log.truePos.push(pos);
+      log.measPos.push(measPos);
+      log.control.push(control);
+      log.trueError.push(sp - pos);
+      log.measError.push(sp - measPos);
+      log.velocity.push(vel);
+    }
+  }
+
+  return log;
+}
+
+function gaussRandom() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LESSONS
+// ═══════════════════════════════════════════════════════════════
+
+const LESSONS = [
+  // ─── Lesson 1: Ideal Motor ───
+  {
+    title: "The Ideal Motor",
+    number: "01",
+    plant: { type: 'integrator', gain: 0.1 },
+    defaultGains: { Kp: 0, Ki: 0, Kd: 0 },
+    gainRanges: { Kp: [0, 25, 0.1], Ki: [0, 0, 0], Kd: [0, 0, 0] },
+    enabledGains: ['Kp'],
+    commands: ['step'],
+    description: `
+      <p>We start with the simplest possible motor: a <strong>perfect velocity source</strong>. Whatever control signal you send, the motor moves at exactly that speed. No mass, no friction, no delay.</p>
+      <p>The plant model is: <code>velocity = gain × control</code>, and position is the integral of velocity.</p>
+      <p>Your controller computes: <code>control = Kp × error</code>, where <code>error = setpoint − measured_position</code>.</p>
+      <p>For this ideal system, theory predicts <strong>Kp = 10</strong> gives "deadbeat" control — the system reaches the target in exactly one control cycle. But what happens above that?</p>
+    `,
+    model: `position += gain × Kp × error × dt\npole at z = (1 − gain × Kp × dt)\nstable when |pole| < 1\ndeadbeat when pole = 0 → Kp = 1/(gain×dt) = 10`,
+    insight: `Even for the simplest possible system, there is a stability limit. P = 10 is optimal <em>only</em> for this trivial case. Above Kp ≈ 20, the system oscillates and diverges. This is a z-plane stability boundary: the pole at z = (1 − Kp·gain·dt) must stay inside the unit circle.`,
+    challenges: `<p>1. Set Kp = 5. Watch the exponential approach — each step closes half the remaining error.</p>
+      <p>2. Set Kp = 10. One-step convergence (deadbeat).</p>
+      <p>3. Set Kp = 15. Oscillation appears but decays.</p>
+      <p>4. Set Kp = 20. Sustained oscillation — marginally unstable.</p>
+      <p>5. Set Kp = 22. Divergent. The system is unstable.</p>`
+  },
+
+  // ─── Lesson 2: Adding Mass ───
+  {
+    title: "Adding Inertia",
+    number: "02",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0 },
+    defaultGains: { Kp: 2, Ki: 0, Kd: 0 },
+    gainRanges: { Kp: [0, 20, 0.1], Ki: [0, 0, 0], Kd: [0, 5, 0.01] },
+    enabledGains: ['Kp', 'Kd'],
+    commands: ['step'],
+    description: `
+      <p>Now the motor drives a <strong>mass</strong>. The control signal is a force, and F = ma. The system has <strong>inertia</strong> — it resists changes in velocity and carries momentum.</p>
+      <p>Try Kp = 5 with Kd = 0. The mass overshoots the target because it has velocity when it arrives. Then it reverses, overshoots again. <strong>P control on a mass gives perpetual oscillation</strong> — the system is marginally stable.</p>
+      <p>This is where the <strong>D term</strong> earns its name. Derivative control acts as a brake: it opposes the <em>rate of change</em> of error, damping the oscillation before it happens.</p>
+    `,
+    model: `acceleration = force / mass\nforce = Kp × error + Kd × d(error)/dt\nω_n = √(Kp/mass)  [natural frequency]\nζ = Kd / (2√(Kp·mass))  [damping ratio]\ncritically damped when ζ = 1`,
+    insight: `A mass is a <em>double integrator</em> — it integrates force to velocity, and velocity to position. P-only control gives purely imaginary poles (sustained oscillation). The D term adds real parts to the poles, pulling them into the stable region. Critical damping (ζ = 1) gives the fastest response without overshoot.`,
+    challenges: `<p>1. Set Kp = 5, Kd = 0. Pure oscillation — the mass never settles.</p>
+      <p>2. Slowly increase Kd. Watch oscillation damp out.</p>
+      <p>3. For Kp = 5, critical damping is Kd ≈ 4.47. Try it — fastest response, no overshoot.</p>
+      <p>4. What happens with very high Kd? The system becomes sluggish — overdamped.</p>
+      <p>5. Try Kp = 15 and find the matching critical Kd (≈ 7.75).</p>`
+  },
+
+  // ─── Lesson 3: Friction ───
+  {
+    title: "Friction & Stiction",
+    number: "03",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0, coulombFriction: 8.0 },
+    defaultGains: { Kp: 5, Ki: 0, Kd: 3 },
+    gainRanges: { Kp: [0, 30, 0.1], Ki: [0, 10, 0.05], Kd: [0, 8, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step'],
+    description: `
+      <p>Real motors have <strong>friction</strong>. Two kinds matter:</p>
+      <p><strong>Viscous friction</strong> opposes motion proportionally to velocity — like moving through honey. This actually <em>helps</em> stability (natural damping) but slows the system down.</p>
+      <p><strong>Coulomb friction (stiction)</strong> is a constant force that opposes any motion — the motor must overcome a breakaway force before it moves at all. Near the target, the error is small, so the P term produces little force, and the motor <strong>stalls in a dead zone</strong> around the target.</p>
+      <p>This is exactly where the <strong>I term</strong> shines. It accumulates even tiny errors over time, slowly building enough force to push through the friction dead zone.</p>
+    `,
+    model: `F_net = control − b·velocity − F_c·sign(vel)\nb = 2.0 (viscous), F_c = 8.0 (Coulomb)\naccel = F_net / mass\n\nDead zone: P·error < F_c → motor stalls\nI term: ∫error·dt grows until Ki·I > F_c`,
+    insight: `The I term eliminates steady-state error by accumulating a "memory" of past errors. For friction: it builds up force until it overcomes stiction. This is why PID has three terms — P handles the present, I handles the past (accumulated offsets), and D handles the future (rate of change).`,
+    challenges: `<p>1. Start with Kp = 5, Kd = 3, Ki = 0. Watch the system stall ~8 units from target.</p>
+      <p>2. Add Ki = 0.5. The system slowly creeps to the target as I accumulates.</p>
+      <p>3. Try Ki = 3. Faster correction but notice the overshoot — I has momentum of its own.</p>
+      <p>4. Too much Ki (try 8) causes oscillation. The integral overshoots, reverses, overshoots again.</p>`
+  },
+
+  // ─── Lesson 4: Integral Windup ───
+  {
+    title: "Integral Windup",
+    number: "04",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0, coulombFriction: 5.0, maxForce: 50 },
+    defaultGains: { Kp: 8, Ki: 3, Kd: 4 },
+    gainRanges: { Kp: [0, 30, 0.1], Ki: [0, 15, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step'],
+    showAntiWindup: true,
+    description: `
+      <p>The motor now has a <strong>maximum force limit</strong> of ±50 units — the actuator <strong>saturates</strong>. During a large step command, the error is huge, so the controller requests maximum force. The P and D terms hit the ceiling, and the I term keeps accumulating because the error persists.</p>
+      <p>When the system finally approaches the target, that <strong>accumulated integral is enormous</strong>. It drives the system far past the target, causing massive overshoot. This is <strong>integral windup</strong> — the most common PID failure mode in practice.</p>
+      <p>Toggle <strong>anti-windup</strong> to see the fix: clamp the integral term so it can't accumulate beyond what the actuator can deliver.</p>
+    `,
+    model: `actuator saturates at ±50\nwithout anti-windup: I grows unbounded\nduring saturation\n\nwith anti-windup:\nI_max = maxForce / Ki\nI = clamp(I, −I_max, I_max)`,
+    insight: `Integral windup happens whenever the actuator saturates for an extended period. The I term accumulates a "debt" that must be "repaid" through overshoot. Anti-windup (clamping, conditional integration, or back-calculation) is essential in any real PID implementation. Marlin firmware implements this for hotend temperature control.`,
+    challenges: `<p>1. Run with Ki = 3, anti-windup OFF. Watch the massive overshoot.</p>
+      <p>2. Toggle anti-windup ON. Same gains, dramatically less overshoot.</p>
+      <p>3. Try Ki = 10 with and without anti-windup. The difference is even more dramatic.</p>
+      <p>4. Notice: with anti-windup, you can use higher Ki without fear, giving faster friction compensation.</p>`
+  },
+
+  // ─── Lesson 5: Measurement Noise ───
+  {
+    title: "Sensor Noise",
+    number: "05",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0, coulombFriction: 3.0,
+             maxForce: 80, antiWindup: true, noiseStd: 2.0 },
+    defaultGains: { Kp: 8, Ki: 2, Kd: 4 },
+    gainRanges: { Kp: [0, 20, 0.1], Ki: [0, 10, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step'],
+    showFilteredDeriv: true,
+    description: `
+      <p>Real sensors are <strong>noisy</strong>. The position measurement now has random high-frequency noise (σ = 2 units). This has a devastating effect on the <strong>D term</strong>.</p>
+      <p>Why? The derivative computes <code>(error[n] − error[n−1]) / dt</code>. Two noisy measurements close together, divided by a small dt, produce enormous spikes. The D term amplifies high-frequency noise by nature — differentiation is a high-pass filter.</p>
+      <p>Watch the control signal with Kd > 0: it chatters wildly, sending oscillating commands to the motor. Toggle <strong>filtered derivative</strong> to see how a low-pass filter on the D term tames this.</p>
+    `,
+    model: `measured = true_position + N(0, σ²)\nσ = 2.0 units\n\nraw D = (error[n] − error[n−1]) / dt\nfiltered D = α·raw_D + (1−α)·prev_D\nα = 0.15 (strong smoothing)`,
+    insight: `Differentiation amplifies noise — it's mathematically a high-pass filter. In frequency domain, d/dt multiplies amplitude by ω. This is why many practical controllers use PI (no D) or apply heavy filtering to the derivative. Another approach: compute the derivative of the <em>measurement</em> instead of the error (derivative-on-measurement), which avoids spikes when the setpoint changes.`,
+    challenges: `<p>1. Set Kd = 4, filter OFF. Watch the control signal — pure chaos.</p>
+      <p>2. Toggle filtered derivative ON. Same Kd, much smoother control.</p>
+      <p>3. Try Kd = 0 (PI only). Clean control but more overshoot.</p>
+      <p>4. Find a balance: moderate Kd with filtering gives damping without noise amplification.</p>`
+  },
+
+  // ─── Lesson 6: Backlash ───
+  {
+    title: "Backlash",
+    number: "06",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0,
+             maxForce: 80, antiWindup: true, backlash: 5.0 },
+    defaultGains: { Kp: 8, Ki: 1, Kd: 4 },
+    gainRanges: { Kp: [0, 20, 0.1], Ki: [0, 10, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step'],
+    description: `
+      <p>Gearboxes have <strong>backlash</strong> — a small gap (play) between the gears. When the motor reverses direction, the output doesn't move for a short distance while the gears take up the slack (5 units of play here).</p>
+      <p>This creates a <strong>limit cycle</strong>: the controller overshoots slightly, reverses, hits the backlash dead zone, the output doesn't respond, error grows, controller drives harder, output jumps, overshoots the other way. This back-and-forth oscillation around the target <strong>cannot be eliminated by any linear PID tuning</strong>.</p>
+      <p>The limit cycle amplitude is roughly proportional to the backlash amount. Reducing backlash mechanically (better gears, preloaded bearings) is the real fix.</p>
+    `,
+    model: `backlash gap = 5.0 units\n\nmotor moves freely within gap\noutput only moves when motor hits\nthe edge of the dead zone\n\nresult: limit cycle ≈ backlash width`,
+    insight: `Backlash is a <em>nonlinear</em> phenomenon — the system behaves differently depending on direction of motion. No linear controller (PID, LQR, etc.) can perfectly compensate for it. Strategies include: reducing mechanical backlash, backlash compensation algorithms (feed-forward based on direction), or accepting a limit cycle and minimizing its amplitude through conservative gains.`,
+    challenges: `<p>1. Run with default gains. Notice the oscillation that never settles — the limit cycle.</p>
+      <p>2. Reduce Kp to 3. The limit cycle shrinks but response is much slower.</p>
+      <p>3. Increase Kd to damp the oscillation. It helps but can't eliminate it entirely.</p>
+      <p>4. This is a fundamental limitation: no PID tuning can overcome 5 units of mechanical slop.</p>`
+  },
+
+  // ─── Lesson 7: Gear Slippage ───
+  {
+    title: "Gear Slippage",
+    number: "07",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0,
+             maxForce: 100, antiWindup: true,
+             slippageThreshold: 40, slippageRate: 0.03 },
+    defaultGains: { Kp: 10, Ki: 2, Kd: 5 },
+    gainRanges: { Kp: [0, 25, 0.1], Ki: [0, 10, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step', 'scurve'],
+    description: `
+      <p>Under <strong>high acceleration</strong> (high jerk), the gears can slip. When the commanded force exceeds the friction capacity of the gear teeth, some of that force is lost. The motor thinks it moved, but the output moved less.</p>
+      <p>This is especially problematic for <strong>step commands</strong> — the instant change demands infinite acceleration at t=0. Try running a step first, then switch to an <strong>S-curve</strong> command. The S-curve limits jerk, keeping forces within the gear's capacity.</p>
+      <p>This is why 3D printers and CNC machines use <strong>motion planning</strong> with acceleration and jerk limits — it's not just about smooth motion, it's about preventing mechanical failure modes.</p>
+    `,
+    model: `slip model: if |accel| > threshold:\n  effective_force *= 1/(1 + excess·rate)\n\nthreshold = 40 (slip begins)\nrate = 0.03 (slip severity)\n\nstep input → huge initial accel → slip\nS-curve → bounded accel → no slip`,
+    insight: `Command shaping (how you define the setpoint trajectory) is as important as feedback control (how you react to error). A step input is mathematically simple but physically violent — it demands instantaneous velocity change. S-curves, trapezoidal profiles, and jerk-limited trajectories produce the same final position with dramatically less mechanical stress and better tracking.`,
+    challenges: `<p>1. Run with Step command and high Kp (10+). Notice the tracking error spike at the start — slippage.</p>
+      <p>2. Switch to S-curve command. Same gains, much less slippage error.</p>
+      <p>3. With Step command, reduce Kp to 3. Less slippage but slower response.</p>
+      <p>4. The insight: good control isn't just about gains — it's about commanding what the system can actually deliver.</p>`
+  },
+
+  // ─── Lesson 8: Command Shaping ───
+  {
+    title: "Command Shaping",
+    number: "08",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0, coulombFriction: 3.0,
+             maxForce: 60, antiWindup: true, noiseStd: 0.5, useFilteredDeriv: true },
+    defaultGains: { Kp: 8, Ki: 2, Kd: 4 },
+    gainRanges: { Kp: [0, 20, 0.1], Ki: [0, 10, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step', 'ramp', 'scurve', 'scurve_smooth'],
+    description: `
+      <p>Same motor, same PID gains — but <strong>four different command profiles</strong>:</p>
+      <p><strong>Step:</strong> Instantaneous jump. Maximum tracking error, maximum overshoot, maximum mechanical stress.</p>
+      <p><strong>Ramp:</strong> Linear increase. Constant velocity phase reduces peak error. But the corners (start/end of ramp) still have discontinuous acceleration.</p>
+      <p><strong>S-curve (quadratic):</strong> Smooth acceleration. Much lower peak error, less overshoot, reduced stress on gears.</p>
+      <p><strong>S-curve (smootherstep):</strong> Zero jerk at start and end. The gentlest possible trajectory. Minimal mechanical stress, best tracking.</p>
+      <p>Run each one and compare the error plots. <strong>Same controller, vastly different performance.</strong></p>
+    `,
+    model: `step:        sp(t) = target · u(t)\nramp:        sp(t) = target · t/T\nS-curve:     sp(t) = target · smooth(t/T)\nsmoothstep:  sp(t) = target · 6t⁵−15t⁴+10t³`,
+    insight: `In practice, the quality of your reference trajectory often matters more than the quality of your controller. A well-shaped command with a mediocre PID will outperform a step command with a perfectly tuned PID. This is why 3D printer firmware spends so much computation on motion planning — computing smooth velocity profiles for each G-code segment.`,
+    challenges: `<p>1. Run all four command types with the same gains. Compare peak error and settling time.</p>
+      <p>2. Notice: the smoother the command, the smaller the peak control signal. Less actuator stress.</p>
+      <p>3. Try intentionally poor PID tuning (Kp = 15, Ki = 0, Kd = 0). S-curve still works OK — step is a disaster.</p>
+      <p>4. For each command type, what's the minimum settling time you can achieve?</p>`
+  },
+
+  // ─── Lesson 9: Sensor Drift ───
+  {
+    title: "Sensor Drift",
+    number: "09",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0,
+             maxForce: 80, antiWindup: true,
+             noiseStd: 0.5, driftRate: 2.0, useFilteredDeriv: true },
+    defaultGains: { Kp: 8, Ki: 2, Kd: 4 },
+    gainRanges: { Kp: [0, 20, 0.1], Ki: [0, 10, 0.1], Kd: [0, 10, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step', 'scurve'],
+    description: `
+      <p>The sensor now has a <strong>drift</strong> — the measured position slowly diverges from the true position at 2 units/second. This models an encoder with a systematic bias, or an IMU accumulating error over time (dead reckoning).</p>
+      <p>Watch the <strong>green line</strong> (measured position) and the <strong>white line</strong> (true position) diverge over time. The controller drives to where it <em>thinks</em> the target is — but its map of reality is wrong.</p>
+      <p>The <strong>I term makes this worse</strong>: it faithfully integrates the growing "error" it sees (which is actually the drift), pushing the true position further from the target.</p>
+      <p>This is why dead reckoning alone is insufficient for long-duration control. You need <strong>absolute references</strong> (encoders, GPS, limit switches) to correct drift.</p>
+    `,
+    model: `measured = true_pos + drift_rate × t\ndrift_rate = 2.0 units/sec\n\ncontroller sees: error = sp − measured\ntrue error = sp − true_pos\nthese diverge over time\n\nI term accumulates drift as "error"`,
+    insight: `Sensor drift is the Achilles' heel of feedback control. The controller can only act on what it measures — if the measurement drifts, the controller faithfully follows the drift. The I term is especially vulnerable because it accumulates drift error over time. This is fundamentally the same problem as inertial navigation drift, and the solution is the same: periodic correction from an absolute reference (GPS, homing, etc.)`,
+    challenges: `<p>1. Run with Ki = 2. Watch the true error (blue in error plot) grow over time even though measured error (orange) looks fine.</p>
+      <p>2. Set Ki = 0. Drift still causes error but it doesn't accumulate as badly.</p>
+      <p>3. Try Ki = 5. The drift gets amplified by the integral — true position diverges faster.</p>
+      <p>4. There is no PID tuning that fixes drift. You need a better sensor or an absolute reference.</p>`
+  },
+
+  // ─── Lesson 10: Full Challenge ───
+  {
+    title: "The Full Challenge",
+    number: "10",
+    plant: { type: 'mass', mass: 1.0, gain: 1.0, viscousFriction: 2.0, coulombFriction: 4.0,
+             maxForce: 60, antiWindup: true,
+             noiseStd: 1.0, backlash: 2.0,
+             slippageThreshold: 50, slippageRate: 0.02,
+             useFilteredDeriv: true },
+    defaultGains: { Kp: 8, Ki: 2, Kd: 4 },
+    gainRanges: { Kp: [0, 25, 0.1], Ki: [0, 15, 0.1], Kd: [0, 12, 0.01] },
+    enabledGains: ['Kp', 'Ki', 'Kd'],
+    commands: ['step', 'ramp', 'scurve', 'scurve_smooth'],
+    description: `
+      <p>Everything combined: <strong>mass, viscous friction, Coulomb friction, actuator limits, sensor noise, backlash, and gear slippage</strong>. This is closer to what a real motor system looks like.</p>
+      <p>Your task: <strong>achieve the lowest RMS tracking error</strong> while maintaining stability. Try different command profiles and gain combinations.</p>
+      <p>This is realistic PID tuning. There's no perfect answer — every gain is a tradeoff. Higher Kp gives faster response but more noise sensitivity and slippage. Higher Ki overcomes friction but causes windup and amplifies backlash oscillation. Higher Kd damps motion but amplifies sensor noise.</p>
+      <p>The art of control engineering is finding the right balance for <em>your specific system</em>.</p>
+    `,
+    model: `mass = 1.0, viscous = 2.0, Coulomb = 4.0\nactuator limit = ±60\nnoise σ = 1.0, backlash = 2.0\nslippage threshold = 50\n\nall effects active simultaneously`,
+    insight: `Real control engineering is about managing tradeoffs. Every system has multiple imperfections that pull PID gains in different directions. The best practical approach: start with moderate gains, identify which imperfection dominates (friction? noise? inertia?), tune for that, then address secondary effects. And always consider whether better command shaping can reduce the demands on your controller.`,
+    challenges: `<p>1. Start with the defaults. Identify what's limiting performance.</p>
+      <p>2. Try the S-curve command — it should help with slippage.</p>
+      <p>3. Can you get RMS error below 3.0 with S-curve? Below 2.0?</p>
+      <p>4. Compare your best Step result with your best S-curve result.</p>`
+  }
+];
+
+
+// ═══════════════════════════════════════════════════════════════
+// PLOTTER
+// ═══════════════════════════════════════════════════════════════
+
+class Plotter {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.margin = { top: 28, right: 16, bottom: 22, left: 56 };
+  }
+
+  resize() {
+    const rect = this.canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.w = rect.width;
+    this.h = rect.height;
+  }
+
+  clear() {
+    this.ctx.fillStyle = '#0d1420';
+    this.ctx.fillRect(0, 0, this.w, this.h);
+  }
+
+  drawGrid(xMin, xMax, yMin, yMax) {
+    const ctx = this.ctx;
+    const m = this.margin;
+    const pw = this.w - m.left - m.right;
+    const ph = this.h - m.top - m.bottom;
+
+    // Y grid lines
+    const yTicks = niceScale(yMin, yMax, 5);
+    ctx.strokeStyle = '#1a2538';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#566880';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.textAlign = 'right';
+
+    for (const v of yTicks) {
+      const y = m.top + ph * (1 - (v - yMin) / (yMax - yMin));
+      ctx.beginPath();
+      ctx.moveTo(m.left, y);
+      ctx.lineTo(m.left + pw, y);
+      ctx.stroke();
+      ctx.fillText(v.toFixed(yMax - yMin > 10 ? 0 : 1), m.left - 6, y + 3.5);
+    }
+
+    // X grid lines
+    const xTicks = niceScale(xMin, xMax, 6);
+    ctx.textAlign = 'center';
+    for (const v of xTicks) {
+      const x = m.left + pw * ((v - xMin) / (xMax - xMin));
+      ctx.beginPath();
+      ctx.moveTo(x, m.top);
+      ctx.lineTo(x, m.top + ph);
+      ctx.stroke();
+      ctx.fillText(v.toFixed(1) + 's', x, this.h - 4);
+    }
+
+    // Border
+    ctx.strokeStyle = '#2a3548';
+    ctx.strokeRect(m.left, m.top, pw, ph);
+  }
+
+  drawLine(data, tData, xMin, xMax, yMin, yMax, color, lineWidth = 1.5) {
+    const ctx = this.ctx;
+    const m = this.margin;
+    const pw = this.w - m.left - m.right;
+    const ph = this.h - m.top - m.bottom;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+
+    let started = false;
+    for (let i = 0; i < data.length; i++) {
+      const x = m.left + pw * ((tData[i] - xMin) / (xMax - xMin));
+      const y = m.top + ph * (1 - (data[i] - yMin) / (yMax - yMin));
+      const cy = Math.max(m.top, Math.min(m.top + ph, y));
+      if (!started) { ctx.moveTo(x, cy); started = true; }
+      else ctx.lineTo(x, cy);
+    }
+    ctx.stroke();
+  }
+
+  drawZeroLine(xMin, xMax, yMin, yMax) {
+    if (yMin < 0 && yMax > 0) {
+      const ctx = this.ctx;
+      const m = this.margin;
+      const pw = this.w - m.left - m.right;
+      const ph = this.h - m.top - m.bottom;
+      const y = m.top + ph * (1 - (0 - yMin) / (yMax - yMin));
+      ctx.strokeStyle = '#3a4a60';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(m.left, y);
+      ctx.lineTo(m.left + pw, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+function niceScale(min, max, targetTicks) {
+  const range = max - min;
+  if (range === 0) return [min];
+  const rough = range / targetTicks;
+  const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const residual = rough / mag;
+  let nice;
+  if (residual <= 1.5) nice = 1 * mag;
+  else if (residual <= 3) nice = 2 * mag;
+  else if (residual <= 7) nice = 5 * mag;
+  else nice = 10 * mag;
+
+  const ticks = [];
+  let v = Math.ceil(min / nice) * nice;
+  while (v <= max + nice * 0.01) {
+    ticks.push(Math.round(v * 1e6) / 1e6);
+    v += nice;
+  }
+  return ticks;
+}
+
+function dataRange(arrays, padding = 0.1) {
+  let min = Infinity, max = -Infinity;
+  for (const arr of arrays) {
+    for (const v of arr) {
+      if (isFinite(v)) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
+  }
+  if (min === max) { min -= 1; max += 1; }
+  const pad = (max - min) * padding;
+  return [min - pad, max + pad];
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// UI CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+
+let currentLesson = 0;
+let currentCommand = 'step';
+let antiWindupOn = false;
+let filteredDerivOn = false;
+let simData = null;
+
+const plotters = [];
+
+function init() {
+  // Create plotters
+  for (let i = 1; i <= 3; i++) {
+    plotters.push(new Plotter(document.getElementById('plot' + i)));
+  }
+
+  // Build lesson nav
+  buildLessonNav();
+  loadLesson(0);
+
+  window.addEventListener('resize', () => {
+    plotters.forEach(p => p.resize());
+    if (simData) drawPlots(simData);
+  });
+
+  // Initial resize
+  plotters.forEach(p => p.resize());
+}
+
+function buildLessonNav() {
+  const nav = document.getElementById('lessonNav');
+  nav.innerHTML = '';
+  LESSONS.forEach((l, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'lesson-btn' + (i === currentLesson ? ' active' : '');
+    btn.textContent = i + 1;
+    btn.onclick = () => loadLesson(i);
+    nav.appendChild(btn);
+  });
+}
+
+function loadLesson(idx) {
+  currentLesson = idx;
+  const L = LESSONS[idx];
+
+  // Update nav
+  document.querySelectorAll('.lesson-btn').forEach((b, i) => {
+    b.className = 'lesson-btn' + (i === idx ? ' active' : '');
+  });
+
+  // Sidebar content
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = `
+    <div class="lesson-header">
+      <span class="lesson-number">LESSON ${L.number}</span>
+    </div>
+    <h2 class="lesson-title">${L.title}</h2>
+    <div class="lesson-desc">${L.description}</div>
+    <div class="model-box">
+      <div class="model-label">Plant Model</div>
+      ${L.model.replace(/\n/g, '<br>')}
+    </div>
+    <div class="insight-box">
+      <div class="label">Key Insight</div>
+      <p>${L.insight}</p>
+    </div>
+    <div class="challenge-box">
+      <div class="label">Try This</div>
+      ${L.challenges}
+    </div>
+  `;
+
+  // Controls
+  currentCommand = L.commands[0];
+  antiWindupOn = !!L.plant.antiWindup;
+  filteredDerivOn = !!L.plant.useFilteredDeriv;
+  buildControls(L);
+
+  // Auto-run
+  runSim();
+}
+
+function buildControls(L) {
+  const ctrl = document.getElementById('controls');
+  let html = '';
+
+  // Kp
+  const kpEn = L.enabledGains.includes('Kp');
+  html += buildGainSlider('Kp', 'kp', L.gainRanges.Kp, L.defaultGains.Kp, kpEn);
+
+  // Ki
+  const kiEn = L.enabledGains.includes('Ki');
+  html += buildGainSlider('Ki', 'ki', L.gainRanges.Ki, L.defaultGains.Ki, kiEn);
+
+  // Kd
+  const kdEn = L.enabledGains.includes('Kd');
+  html += buildGainSlider('Kd', 'kd', L.gainRanges.Kd, L.defaultGains.Kd, kdEn);
+
+  html += '<div class="separator"></div>';
+
+  // Command type selector
+  if (L.commands.length > 1) {
+    html += `<div class="command-select">
+      <label>Command:</label>
+      <select id="cmdSelect" onchange="currentCommand=this.value; runSim()">`;
+    const cmdNames = { step: 'Step', ramp: 'Ramp', scurve: 'S-Curve', scurve_smooth: 'Smootherstep', trapezoid: 'Trapezoid' };
+    for (const c of L.commands) {
+      html += `<option value="${c}" ${c === currentCommand ? 'selected' : ''}>${cmdNames[c] || c}</option>`;
+    }
+    html += `</select></div>`;
+  }
+
+  // Anti-windup toggle
+  if (L.showAntiWindup) {
+    html += `<div class="toggle-group">
+      <label>Anti-windup</label>
+      <div class="toggle-switch ${antiWindupOn ? 'active' : ''}" id="toggleAW"
+           onclick="toggleAntiWindup()"></div>
+    </div>`;
+  }
+
+  // Filtered derivative toggle
+  if (L.showFilteredDeriv) {
+    html += `<div class="toggle-group">
+      <label>Filter D</label>
+      <div class="toggle-switch ${filteredDerivOn ? 'active' : ''}" id="toggleFD"
+           onclick="toggleFilteredDeriv()"></div>
+    </div>`;
+  }
+
+  html += '<div class="separator"></div>';
+  html += '<button class="btn-run" onclick="runSim()">&#9654; Run</button>';
+  html += '<button class="btn-reset" onclick="resetGains()">Reset</button>';
+
+  ctrl.innerHTML = html;
+}
+
+function buildGainSlider(label, cls, range, defaultVal, enabled) {
+  const [min, max, step] = range;
+  const dis = !enabled ? ' disabled' : '';
+  return `<div class="gain-control${enabled ? '' : ' disabled'}">
+    <span class="gain-label ${cls}">${label}</span>
+    <input type="range" id="gain_${label}" min="${min}" max="${max}" step="${step || 0.01}"
+           value="${defaultVal}" oninput="updateGainDisplay('${label}'); runSim()" ${dis}>
+    <span class="gain-value" id="val_${label}">${defaultVal.toFixed(2)}</span>
+  </div>`;
+}
+
+function updateGainDisplay(label) {
+  const v = parseFloat(document.getElementById('gain_' + label).value);
+  document.getElementById('val_' + label).textContent = v.toFixed(2);
+}
+
+function getGains() {
+  return {
+    Kp: parseFloat(document.getElementById('gain_Kp')?.value || 0),
+    Ki: parseFloat(document.getElementById('gain_Ki')?.value || 0),
+    Kd: parseFloat(document.getElementById('gain_Kd')?.value || 0),
+  };
+}
+
+function resetGains() {
+  const L = LESSONS[currentLesson];
+  ['Kp', 'Ki', 'Kd'].forEach(k => {
+    const el = document.getElementById('gain_' + k);
+    if (el) {
+      el.value = L.defaultGains[k];
+      updateGainDisplay(k);
+    }
+  });
+  runSim();
+}
+
+function toggleAntiWindup() {
+  antiWindupOn = !antiWindupOn;
+  const el = document.getElementById('toggleAW');
+  if (el) el.classList.toggle('active', antiWindupOn);
+  runSim();
+}
+
+function toggleFilteredDeriv() {
+  filteredDerivOn = !filteredDerivOn;
+  const el = document.getElementById('toggleFD');
+  if (el) el.classList.toggle('active', filteredDerivOn);
+  runSim();
+}
+
+function prevLesson() { if (currentLesson > 0) loadLesson(currentLesson - 1); }
+function nextLesson() { if (currentLesson < LESSONS.length - 1) loadLesson(currentLesson + 1); }
+
+// ─── Run Simulation ───
+function runSim() {
+  const gains = getGains();
+  const L = LESSONS[currentLesson];
+
+  // Apply toggles to plant
+  const plant = { ...L.plant };
+  if (L.showAntiWindup) plant.antiWindup = antiWindupOn;
+  if (L.showFilteredDeriv) plant.useFilteredDeriv = filteredDerivOn;
+
+  // Temporarily patch the lesson's plant
+  const origPlant = L.plant;
+  L.plant = plant;
+
+  simData = simulate(currentLesson, gains, currentCommand);
+
+  L.plant = origPlant;
+
+  drawPlots(simData);
+  updateStats(simData);
+}
+
+// ─── Drawing ───
+function drawPlots(data) {
+  plotters.forEach(p => p.resize());
+
+  const tMin = 0, tMax = SIM_DURATION;
+
+  // Plot 1: Position
+  {
+    const p = plotters[0];
+    p.clear();
+    const [yMin, yMax] = dataRange([data.setpoint, data.truePos, data.measPos], 0.08);
+    p.drawGrid(tMin, tMax, yMin, yMax);
+    p.drawZeroLine(tMin, tMax, yMin, yMax);
+    p.drawLine(data.setpoint, data.t, tMin, tMax, yMin, yMax, '#f59e0b', 2);
+    p.drawLine(data.truePos, data.t, tMin, tMax, yMin, yMax, '#e2e8f0', 1.5);
+
+    const L = LESSONS[currentLesson];
+    const showMeas = L.plant.noiseStd || L.plant.driftRate;
+
+    if (showMeas) {
+      p.drawLine(data.measPos, data.t, tMin, tMax, yMin, yMax, '#22c55e88', 1);
+    }
+
+    // Legends
+    const leg = document.getElementById('legend1');
+    leg.innerHTML = `
+      <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span>Setpoint</span>
+      <span class="legend-item"><span class="legend-color" style="background:#e2e8f0"></span>True Position</span>
+      ${showMeas ? '<span class="legend-item"><span class="legend-color" style="background:#22c55e88"></span>Measured</span>' : ''}
+    `;
+  }
+
+  // Plot 2: Control signal
+  {
+    const p = plotters[1];
+    p.clear();
+    const [yMin, yMax] = dataRange([data.control], 0.1);
+    p.drawGrid(tMin, tMax, yMin, yMax);
+    p.drawZeroLine(tMin, tMax, yMin, yMax);
+    p.drawLine(data.control, data.t, tMin, tMax, yMin, yMax, '#0ea5e9', 1.5);
+
+    const L = LESSONS[currentLesson];
+    if (L.plant.maxForce) {
+      // Draw saturation limits
+      const ctx = p.ctx;
+      const m = p.margin;
+      const pw = p.w - m.left - m.right;
+      const ph = p.h - m.top - m.bottom;
+      ctx.strokeStyle = '#ef444466';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 4]);
+      for (const lim of [L.plant.maxForce, -L.plant.maxForce]) {
+        if (lim >= yMin && lim <= yMax) {
+          const y = m.top + ph * (1 - (lim - yMin) / (yMax - yMin));
+          ctx.beginPath();
+          ctx.moveTo(m.left, y);
+          ctx.lineTo(m.left + pw, y);
+          ctx.stroke();
+        }
+      }
+      ctx.setLineDash([]);
+    }
+
+    document.getElementById('legend2').innerHTML = `
+      <span class="legend-item"><span class="legend-color" style="background:#0ea5e9"></span>Control</span>
+      ${L.plant.maxForce ? '<span class="legend-item"><span class="legend-color" style="background:#ef444466"></span>Saturation</span>' : ''}
+    `;
+  }
+
+  // Plot 3: Error
+  {
+    const p = plotters[2];
+    p.clear();
+    const [yMin, yMax] = dataRange([data.trueError, data.measError], 0.1);
+    p.drawGrid(tMin, tMax, yMin, yMax);
+    p.drawZeroLine(tMin, tMax, yMin, yMax);
+    p.drawLine(data.trueError, data.t, tMin, tMax, yMin, yMax, '#0ea5e9', 1.5);
+
+    const L = LESSONS[currentLesson];
+    const showMeas = L.plant.noiseStd || L.plant.driftRate;
+    if (showMeas) {
+      p.drawLine(data.measError, data.t, tMin, tMax, yMin, yMax, '#f59e0b88', 1);
+    }
+
+    document.getElementById('legend3').innerHTML = `
+      <span class="legend-item"><span class="legend-color" style="background:#0ea5e9"></span>True Error</span>
+      ${showMeas ? '<span class="legend-item"><span class="legend-color" style="background:#f59e0b88"></span>Measured Error</span>' : ''}
+    `;
+  }
+}
+
+function updateStats(data) {
+  // Compute stats from t > 0.5 (after step)
+  const startIdx = data.t.findIndex(t => t > 0.6);
+  const settleThreshold = 2.0;
+  let rmsError = 0, peakError = 0, maxControl = 0, settleTime = SIM_DURATION;
+
+  // RMS of true error after step
+  const errSlice = data.trueError.slice(startIdx);
+  const ctrlSlice = data.control.slice(startIdx);
+  for (let i = 0; i < errSlice.length; i++) {
+    rmsError += errSlice[i] * errSlice[i];
+    peakError = Math.max(peakError, Math.abs(errSlice[i]));
+    maxControl = Math.max(maxControl, Math.abs(ctrlSlice[i]));
+  }
+  rmsError = Math.sqrt(rmsError / errSlice.length);
+
+  // Settling time (last time |error| > threshold)
+  for (let i = data.trueError.length - 1; i >= startIdx; i--) {
+    if (Math.abs(data.trueError[i]) > settleThreshold) {
+      settleTime = data.t[i] - 0.5;
+      break;
+    }
+  }
+  if (settleTime < 0) settleTime = 0;
+
+  // Final error
+  const finalError = Math.abs(data.trueError[data.trueError.length - 1]);
+
+  const bar = document.getElementById('statsBar');
+  bar.innerHTML = `
+    <div class="stat">
+      <span class="stat-label">RMS Error</span>
+      <span class="stat-value ${rmsError < 3 ? 'good' : rmsError < 10 ? 'ok' : 'bad'}">${rmsError.toFixed(2)}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Peak Error</span>
+      <span class="stat-value ${peakError < 10 ? 'good' : peakError < 30 ? 'ok' : 'bad'}">${peakError.toFixed(1)}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Settle Time</span>
+      <span class="stat-value ${settleTime < 1 ? 'good' : settleTime < 3 ? 'ok' : 'bad'}">${settleTime.toFixed(2)}s</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Final Error</span>
+      <span class="stat-value ${finalError < 1 ? 'good' : finalError < 5 ? 'ok' : 'bad'}">${finalError.toFixed(2)}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Peak Control</span>
+      <span class="stat-value">${maxControl.toFixed(1)}</span>
+    </div>
+  `;
+}
+
+
+// ─── Keyboard shortcuts ───
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' && e.altKey) prevLesson();
+  if (e.key === 'ArrowRight' && e.altKey) nextLesson();
+  if (e.key === 'Enter') runSim();
+});
+
+// ─── Initialize ───
+init();
+</script>
+</body>
+</html>
